@@ -18,6 +18,9 @@
     <None Update="Ford V Ferrari.srt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Scoob.2020.1080p.WEB-DL.DD5.1.H264-FGT.srt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

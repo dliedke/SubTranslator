@@ -13,16 +13,19 @@ namespace SubTranslator
 {
     public class Program
     {
+        private static TimeSpan totalTime = new TimeSpan();
+        private static DateTime lastItemDate;
+
         static void Main(string[] args)
         {
             string appPath = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
 
             // Initial file to be translated
-            string file = Path.Combine(appPath,"Ford V Ferrari.srt");
+            string file = Path.Combine(appPath,"Scoob.2020.1080p.WEB-DL.DD5.1.H264-FGT.srt");
             string originalLanguage = "en";
 
             // Final translated file
-            string translatedFile = Path.Combine(appPath, "Ford V Ferrari-BR.srt");
+            string translatedFile = Path.Combine(appPath, "Scoob.2020.1080p.WEB-DL.DD5.1.H264-FGT-BR.srt");
             string translatedLanguage = "pt";
             
             // Read the subtitle and parse it
@@ -37,6 +40,7 @@ namespace SubTranslator
             // (page translation has severe issues in the translation)
             IWebDriver driver = new ChromeDriver();
             int count = 0;
+            lastItemDate = DateTime.Now;
 
             foreach (var item in items)
             {
@@ -47,6 +51,9 @@ namespace SubTranslator
                 }
                 count++;
 
+                // Show progress and estimated time
+                Console.WriteLine($"Translated subtitle {count}/{items.Count}. Estimated time to complete: " + GetEstimatedRemainingTime(count, items.Count));
+
                 // For debugging and troubleshooting
                 //if (count == 3)
                 //{
@@ -55,18 +62,16 @@ namespace SubTranslator
             }
             driver.Close();
             driver.Quit();
-            
+
             // Write the subtitle translated to disk
-            using (StreamWriter sw = File.CreateText(translatedFile))
+            using StreamWriter sw = File.CreateText(translatedFile);
+            int index = 1;
+            foreach (var item in items)
             {
-                int index = 1;
-                foreach (var item in items)
-                {
-                    sw.Write(GetStringSubtitleItem(index, item));
-                    index++;
-                }
-                sw.Close();
+                sw.Write(GetStringSubtitleItem(index, item));
+                index++;
             }
+            sw.Close();
         }
 
         private static string TranslateText(IWebDriver driver, string text, string originalLanguage, string translatedLanguage)
@@ -137,6 +142,33 @@ namespace SubTranslator
                                     string.Join(Environment.NewLine, item.Lines));
 
             return subText;
+        }
+
+        
+        private static string GetEstimatedRemainingTime(int currentItem, int totalItems)
+        {
+            // Get time since last call
+            TimeSpan lastItemTime = DateTime.Now - lastItemDate;
+
+            // Increase total time
+            totalTime += lastItemTime;
+
+            // Get estimated time
+            TimeSpan estimatedRemainingTime = (totalTime / currentItem) * (totalItems - currentItem);
+
+            // Update last call time
+            lastItemDate = DateTime.Now;
+
+            // Not enough data to show estimated time
+            if (currentItem < 10)
+            {
+                return "Please wait...";
+            }
+            else
+            {
+                // Show estimated time in hours, minutes and seconds
+                return $"{estimatedRemainingTime.Hours}h {estimatedRemainingTime.Minutes}m {estimatedRemainingTime.Seconds}s";
+            }
         }
     }
 }
