@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -6,18 +6,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="bin\Debug\netcoreapp3.1\chromedriver.exe" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Selenium.WebDriver" Version="3.141.0" />
+    <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="83.0.4103.3900" />
     <PackageReference Include="SubtitlesParser" Version="1.4.8" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Ford V Ferrari.srt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="Scoob.2020.1080p.WEB-DL.DD5.1.H264-FGT.srt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

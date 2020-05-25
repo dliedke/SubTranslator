@@ -144,7 +144,6 @@ namespace SubTranslator
             return subText;
         }
 
-        
         private static string GetEstimatedRemainingTime(int currentItem, int totalItems)
         {
             // Get time since last call
