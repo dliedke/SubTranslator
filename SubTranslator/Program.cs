@@ -2,7 +2,6 @@
 using System.IO;
 using System.Web;
 using System.Text;
-using System.Reflection;
 using System.Collections.Generic;
 
 using OpenQA.Selenium;
@@ -18,16 +17,29 @@ namespace SubTranslator
 
         static void Main(string[] args)
         {
-            string appPath = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            // Check if subtitle file was provided
+            if (args.Length < 1)
+            {
+                Console.WriteLine("Please provide the english subtitle file!");
+                return;
+            }
+
+            // Check if subtitle file exists
+            if (args.Length > 0 && string.IsNullOrEmpty(args[0])==false && File.Exists(args[0])==false)
+            {
+                Console.WriteLine("Please provide an english subtitle file that exists!");
+                return;
+            }
 
             // Initial file to be translated
-            string file = Path.Combine(appPath,"Scoob.2020.1080p.WEB-DL.DD5.1.H264-FGT.srt");
+            string file = args[0];
             string originalLanguage = "en";
 
             // Final translated file
-            string translatedFile = Path.Combine(appPath, "Scoob.2020.1080p.WEB-DL.DD5.1.H264-FGT-BR.srt");
             string translatedLanguage = "pt";
-            
+            string translatedFile = Path.Combine(Path.GetDirectoryName(file), Path.GetFileNameWithoutExtension(file) + $"-{translatedLanguage}.srt");
+                        
+
             // Read the subtitle and parse it
             List<SubtitleItem> items;
             var parser = new SubtitlesParser.Classes.Parsers.SrtParser();
@@ -55,10 +67,11 @@ namespace SubTranslator
                 Console.WriteLine($"Translated subtitle {count}/{items.Count}. Estimated time to complete: " + GetEstimatedRemainingTime(count, items.Count));
 
                 // For debugging and troubleshooting
-                //if (count == 3)
-                //{
-                //    break;
-                //}
+                /*
+                if (count == 3)
+                {
+                    break;
+                }*/
             }
             driver.Close();
             driver.Quit();
