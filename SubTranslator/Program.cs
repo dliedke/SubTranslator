@@ -105,7 +105,7 @@ namespace SubTranslator
                 var element = driver.FindElement(By.XPath("//span[@class='tlid-translation translation']"));
 
                 // Translation might not have ended, so retry 3 times
-                if (element.Text.EndsWith("..."))
+                if (element.Text.EndsWith("...") || element.Text == "Translating...")
                 {
                     System.Threading.Thread.Sleep(3000);
                     element = driver.FindElement(By.XPath("//span[@class='tlid-translation translation']"));
