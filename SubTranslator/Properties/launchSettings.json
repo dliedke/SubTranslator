@@ -1,8 +1,7 @@
 {
   "profiles": {
     "SubTranslator": {
-      "commandName": "Project",
-      "commandLineArgs": "C:\\Torrents\\Possessor.2020.1080p.AMZN.WEB-DL.DDP5.1.H.264-NTG.srt"
+      "commandName": "Project"
     }
   }
 }
