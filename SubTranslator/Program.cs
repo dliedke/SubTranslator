@@ -102,24 +102,9 @@ namespace SubTranslator
                 System.Threading.Thread.Sleep(2000);
 
                 // Get translated text
-                var element = driver.FindElement(By.XPath("//span[@class='tlid-translation translation']"));
+                string xPathTranslatedElement = "//*[@jsname='W297wb']";
+                var element =  driver.FindElement(By.XPath(xPathTranslatedElement));
 
-                // Translation might not have ended, so retry 3 times
-                if (element.Text.EndsWith("...") || element.Text == "Translating...")
-                {
-                    System.Threading.Thread.Sleep(3000);
-                    element = driver.FindElement(By.XPath("//span[@class='tlid-translation translation']"));
-                }
-                if (element.Text.EndsWith("..."))
-                {
-                    System.Threading.Thread.Sleep(3000);
-                    element = driver.FindElement(By.XPath("//span[@class='tlid-translation translation']"));
-                }
-                if (element.Text.EndsWith("..."))
-                {
-                    System.Threading.Thread.Sleep(3000);
-                    element = driver.FindElement(By.XPath("//span[@class='tlid-translation translation']"));
-                }
                 return element.Text;
             }
             catch
