@@ -102,16 +102,32 @@ namespace SubTranslator
                 System.Threading.Thread.Sleep(2000);
 
                 // Get translated text
-                string xPathTranslatedElement = "//*[@jsname='W297wb']";
-                var element =  driver.FindElement(By.XPath(xPathTranslatedElement));
+                IWebElement element = null;
+                try
+                {
+                    // Try to get text
+                    string xPathTranslatedElementText = "//*[@jsname='W297wb']";
+                    element = driver.FindElement(By.XPath(xPathTranslatedElementText));
+                }
+                catch
+                {
+                    try
+                    {
+                        // Try to get linked text
+                        string xPathTranslatedElementLink = "//*[@jsname='jqKxS']";
+                        element = driver.FindElement(By.XPath(xPathTranslatedElementLink));
+                    }
+                    catch
+                    { }
+                }
 
                 return element.Text;
             }
-            catch
+            catch 
             {
-                // In case of any exception retry 3 times before setting error
+                // In case of any exception retry 5 times before setting error
                 retryCount++;
-                if (retryCount == 3)
+                if (retryCount == 5)
                 {
                     return "ERROR";
                 }
