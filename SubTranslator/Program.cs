@@ -12,33 +12,67 @@ namespace SubTranslator
 {
     public class Program
     {
-        private static TimeSpan totalTime = new TimeSpan();
+        private static TimeSpan totalTime = new();
         private static DateTime lastItemDate;
 
         static void Main(string[] args)
         {
-            // Check if subtitle file was provided
+            // Original subtitle language
+            string originalLanguage = "en";
+
+            // Final language for subtitle translation
+            string translatedLanguage = "pt";
+
+            // Check if subtitle file/directory was provided
             if (args.Length < 1)
             {
-                Console.WriteLine("Please provide the english subtitle file!");
+                Console.WriteLine("Please provide the english subtitle file or a directory with .srt files!");
+                return;
+            }
+
+            // Check if provided args is a directory
+            if (Directory.Exists(args[0]))
+            {
+                // Find all srt files in the directory
+                string[] srtFileList = Directory.GetFiles(args[0], "*.srt");
+
+                // If not srt file was found
+                if (srtFileList.Length == 0)
+                {
+                    Console.WriteLine("Please provide a directory with .srt files!");
+                    return;
+                }
+
+                // Translate multiple .srt files
+                foreach (string srtFile in srtFileList)
+                {
+                    TranslateSubtitle(srtFile, originalLanguage, translatedLanguage);
+                }
+
                 return;
             }
 
             // Check if subtitle file exists
-            if (args.Length > 0 && string.IsNullOrEmpty(args[0])==false && File.Exists(args[0])==false)
+            if (args.Length > 0 && string.IsNullOrEmpty(args[0]) == false && File.Exists(args[0]) == false)
             {
                 Console.WriteLine("Please provide an english subtitle file that exists!");
                 return;
             }
 
-            // Initial file to be translated
-            string file = args[0];
-            string originalLanguage = "en";
+            // Translate a single .srt file
+            if (File.Exists(args[0]))
+            {
+                TranslateSubtitle(args[0], originalLanguage, translatedLanguage);
+            }
+        }
+
+        private static void TranslateSubtitle(string file, string originalLanguage, string translatedLanguage)
+        {
+            // Show file name being translated
+            Console.WriteLine($"\r\nTranslating subtitle file: \"{Path.GetFileName(file)}\"");
 
             // Final translated file
-            string translatedLanguage = "pt";
             string translatedFile = Path.Combine(Path.GetDirectoryName(file), Path.GetFileNameWithoutExtension(file) + $"-{translatedLanguage}.srt");
-                        
 
             // Read the subtitle and parse it
             List<SubtitleItem> items;
@@ -50,13 +84,20 @@ namespace SubTranslator
 
             // Translate the subtitle with Google Translator and Selenium
             // (page translation has severe issues in the translation)
-            IWebDriver driver = new ChromeDriver();
+            ChromeDriverService service = ChromeDriverService.CreateDefaultService();
+            service.SuppressInitialDiagnosticInformation = true;  // Disable logs
+            service.EnableVerboseLogging = false;                 // Disable logs
+            service.EnableAppendLog = false;                      // Disable logs
+            service.HideCommandPromptWindow = true;
+            IWebDriver driver = new ChromeDriver(service);
             int count = 0;
             lastItemDate = DateTime.Now;
 
+
             foreach (var item in items)
             {
-                for(int f=0;f<item.Lines.Count;f++)
+                // Translate each subtitle line
+                for (int f = 0; f < item.Lines.Count; f++)
                 {
                     string translatedText = TranslateText(driver, item.Lines[f], originalLanguage, translatedLanguage);
                     item.Lines[f] = translatedText;
@@ -76,8 +117,8 @@ namespace SubTranslator
             driver.Close();
             driver.Quit();
 
-            // Write the subtitle translated to disk
-            using StreamWriter sw = File.CreateText(translatedFile);
+            // Creates the new subtitle file
+            StreamWriter sw = File.CreateText(translatedFile);
             int index = 1;
             foreach (var item in items)
             {
@@ -85,6 +126,9 @@ namespace SubTranslator
                 index++;
             }
             sw.Close();
+
+            // Show file name that was translated
+            Console.WriteLine($"DONE - Translated subtitle file: \"{Path.GetFileName(file)}\"\r\n");
         }
 
         private static string TranslateText(IWebDriver driver, string text, string originalLanguage, string translatedLanguage)
