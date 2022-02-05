@@ -93,7 +93,20 @@ namespace SubTranslator
             int count = 0;
             lastItemDate = DateTime.Now;
 
+            // Merge the multilines subtitle item into single one
+            // when it is not starting with a hiphen
+            // (talk between people should still be multilines)
+            foreach (var item in items)
+            {
+                if (item.Lines.Count > 1 &&
+                    !string.IsNullOrEmpty(item.Lines[0]) &&
+                    !item.Lines[0].Trim().StartsWith("-"))
+                {
+                    item.Lines = new List<string> { String.Join(' ', item.Lines) };
+                }
+            }
 
+            // Translate all subtitle items
             foreach (var item in items)
             {
                 // Translate each subtitle line
