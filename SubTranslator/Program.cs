@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using SubtitlesParser.Classes;  // From https://github.com/AlexPoint/SubtitlesParser
+using System.Diagnostics;
 
 namespace SubTranslator
 {
@@ -29,6 +30,10 @@ namespace SubTranslator
                 Console.WriteLine("Please provide the english subtitle file or a directory with .srt files!");
                 return;
             }
+
+            // Close any existing ChromeDriver process
+            Console.WriteLine("Closing any existing ChromeDriver process");
+            Process.Start("taskkill", "/F /IM chromedriver.exe /T");
 
             // Check if provided args is a directory
             if (Directory.Exists(args[0]))
@@ -102,7 +107,7 @@ namespace SubTranslator
                     !string.IsNullOrEmpty(item.Lines[0]) &&
                     !item.Lines[0].Trim().StartsWith("-"))
                 {
-                    item.Lines = new List<string> { String.Join(' ', item.Lines) };
+                    item.Lines = new List<string> { String.Join('|', item.Lines) };
                 }
             }
 
@@ -113,6 +118,7 @@ namespace SubTranslator
                 for (int f = 0; f < item.Lines.Count; f++)
                 {
                     string translatedText = TranslateText(driver, item.Lines[f], originalLanguage, translatedLanguage);
+                    translatedText = translatedText.Replace(" | ", "\r\n");
                     item.Lines[f] = translatedText;
                 }
                 count++;
@@ -171,7 +177,7 @@ namespace SubTranslator
                     try
                     {
                         // Try to get linked text
-                        string xPathTranslatedElementLink = "//*[@jsname='jqKxS']";
+                        string xPathTranslatedElementLink = "//*[@jsname='BJE2fc']";
                         element = driver.FindElement(By.XPath(xPathTranslatedElementLink));
                     }
                     catch
