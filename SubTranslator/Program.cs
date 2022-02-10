@@ -15,7 +15,8 @@ namespace SubTranslator
     {
         private static TimeSpan totalTime = new();
         private static DateTime lastItemDate;
-        private static Stopwatch timer = new();
+        private static readonly Stopwatch timer = new();
+        private static int currentIndexSubtitle = 1;
 
         static void Main(string[] args)
         {
@@ -84,12 +85,26 @@ namespace SubTranslator
             // Final translated file
             string translatedFile = Path.Combine(Path.GetDirectoryName(file), Path.GetFileNameWithoutExtension(file) + $"-{translatedLanguage}.srt");
 
-            // Read the subtitle and parse it
+            // Read the original subtitle and parse it
             List<SubtitleItem> items;
             var parser = new SubtitlesParser.Classes.Parsers.SrtParser();
             using (var fileStream = File.OpenRead(file))
             {
                 items = parser.ParseStream(fileStream, Encoding.UTF8);
+            }
+
+            // Check if we already have a translated file in progress
+            // Read, parse it and merge with the original subtitle file
+            if (File.Exists(translatedFile))
+            {
+                List<SubtitleItem> itemsAlreadyTranslated;
+                using var fileStream = File.OpenRead(translatedFile);
+                itemsAlreadyTranslated = parser.ParseStream(fileStream, Encoding.UTF8);
+                items.RemoveRange(0,itemsAlreadyTranslated.Count);
+                items.InsertRange(0,itemsAlreadyTranslated);
+                currentIndexSubtitle = itemsAlreadyTranslated.Count + 1;
+
+                Console.WriteLine($"NOTE: Found existing translation in progress. Resuming from {currentIndexSubtitle}/{items.Count}...");
             }
 
             // Translate the subtitle with Google Translator and Selenium
@@ -100,11 +115,10 @@ namespace SubTranslator
             service.EnableAppendLog = false;                      // Disable logs
             service.HideCommandPromptWindow = true;               // Hide any ChromeDriver window
             IWebDriver driver = new ChromeDriver(service);
-            int count = 0;
             lastItemDate = DateTime.Now;
 
             // Sometimes first URL is not correctly loaded so just load google.com
-            driver.Url = "http://www.google.com"; 
+            driver.Url = "http://www.google.com";
 
             // Merge the multilines subtitle item into single one
             // when it is not starting with a hiphen
@@ -119,8 +133,8 @@ namespace SubTranslator
                 }
             }
 
-            // Translate all subtitle items
-            foreach (var item in items)
+            // Translate all subtitle items not yet translated
+            foreach (var item in items.GetRange(currentIndexSubtitle-1, items.Count - currentIndexSubtitle + 1))
             {
                 // Translate each subtitle line
                 for (int f = 0; f < item.Lines.Count; f++)
@@ -129,27 +143,39 @@ namespace SubTranslator
                     translatedText = translatedText.Replace(" | ", "\r\n");  // reconstruct the new lines
                     item.Lines[f] = translatedText;
                 }
-                count++;
+                
+                // Show progress, total processing time and estimated time to finish
+                TimeSpan timeSpan = timer.Elapsed;
+                string totalProcessingTime = string.Format("{0:D2}:{1:D2}:{2:D2}", timeSpan.Hours, timeSpan.Minutes, timeSpan.Seconds);
+                Console.WriteLine($"{totalProcessingTime} - Translated subtitle {currentIndexSubtitle}/{items.Count}. Estimated time to complete: " + GetEstimatedRemainingTime(currentIndexSubtitle, items.Count));
+
+                // Creates the new translated subtitle file so we can resume 
+                // later automatically if things go wrong in this long process
+                CreateNewSubtileFile(translatedFile, items);
+
+                // Update current subtitle index
+                currentIndexSubtitle++;
 
                 // Every 10 translations wait for 5 seconds
-                if (count % 10 == 0)
+                if (currentIndexSubtitle % 10 == 0)
                 {
-                    // Wait a bit for to avoid being blocked by Google
+                    // Wait a bit to avoid being blocked by Google
                     Console.Write("Waiting 5s....");
                     System.Threading.Thread.Sleep(5000);
                     Console.WriteLine("Done.");
                 }
-
-                // Show progress, total processing time and estimated time to finish
-                TimeSpan timeSpan = timer.Elapsed;
-                string totalProcessingTime = string.Format("{0:D2}:{1:D2}:{2:D2}", timeSpan.Hours, timeSpan.Minutes, timeSpan.Seconds);
-                Console.WriteLine($"{totalProcessingTime} - Translated subtitle {count}/{items.Count}. Estimated time to complete: " + GetEstimatedRemainingTime(count, items.Count));
             }
 
             // Close and quit ChromeDriver process
             driver.Close();
             driver.Quit();
 
+            // Show file name that was sucessfully translated
+            Console.WriteLine($"DONE - Translated subtitle file: \"{Path.GetFileName(file)}\"\r\n");
+        }
+
+        private static void CreateNewSubtileFile(string translatedFile, List<SubtitleItem> items)
+        {
             // Creates the new translated subtitle file
             StreamWriter sw = File.CreateText(translatedFile);
             int index = 1;
@@ -157,11 +183,13 @@ namespace SubTranslator
             {
                 sw.Write(GetStringSubtitleItem(index, item));
                 index++;
+
+                if (index > currentIndexSubtitle)
+                {
+                    break;
+                }
             }
             sw.Close();
-
-            // Show file name that was translated
-            Console.WriteLine($"DONE - Translated subtitle file: \"{Path.GetFileName(file)}\"\r\n");
         }
 
         private static string TranslateText(IWebDriver driver, string text, string originalLanguage, string translatedLanguage)
@@ -173,7 +201,7 @@ namespace SubTranslator
             try
             {
                 // Translate the text with Google Translator
-                driver.Url = $"https://translate.google.com/?hl=pt-BR&op=translate&sl={originalLanguage}&tl={translatedLanguage}&text={HttpUtility.UrlEncode(text)}";
+                driver.Url = $"https://translate.google.com/?hl=en-US&op=translate&sl={originalLanguage}&tl={translatedLanguage}&text={HttpUtility.UrlEncode(text)}";
                 
                 // Get translated text
                 IWebElement element = null;
@@ -230,7 +258,10 @@ namespace SubTranslator
                                     index,
                                     startTs.ToString(@"hh\:mm\:ss\,fff"),
                                     endTs.ToString(@"hh\:mm\:ss\,fff"),
-                                    string.Join(Environment.NewLine, item.Lines));
+                                    string.Join(Environment.NewLine, item.Lines)
+                                          .Replace("|","\r\n")
+                                          .Replace("</ i>", "</i>")
+                                          .Replace("</ b>", "</b>"));
 
             return subText;
         }
