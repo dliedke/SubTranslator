@@ -13,3 +13,5 @@ Set final translated language code in variable 'translatedLanguage' in Main() me
 Then send the srt filename as parameter in command line when calling the compiled application.
 
 It is also possible to send a subdirectory as parameters to translate multiple .srt files in sequence.
+
+In case there is a problem during the translation it is possible to just run again the program and it will resume the existing translation.
