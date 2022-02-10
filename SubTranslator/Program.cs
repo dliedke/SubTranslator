@@ -4,6 +4,7 @@ using System.Web;
 using System.Text;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
@@ -205,15 +206,16 @@ namespace SubTranslator
             {
                 // Translate the text with Google Translator
                 driver.Url = $"https://translate.google.com/?hl=en-US&op=translate&sl={originalLanguage}&tl={translatedLanguage}&text={HttpUtility.UrlEncode(text)}";
-                
+
                 // Get translated text
-                IWebElement element = null;
+                ReadOnlyCollection<IWebElement> elements = null;
+
                 try
                 {
                     // Try to get the translated text
                     string xPathTranslatedElementText = "//*[@jsname='W297wb']";
                     WebDriverExtensions.WaitExtension.WaitUntilElement(driver, By.XPath(xPathTranslatedElementText), 10);
-                    element = driver.FindElement(By.XPath(xPathTranslatedElementText));
+                    elements = driver.FindElements(By.XPath(xPathTranslatedElementText));
                 }
                 catch
                 {
@@ -222,13 +224,20 @@ namespace SubTranslator
                         // Try to get translated linked text
                         string xPathTranslatedElementLink = "//*[@jsname='jqKxS']";
                         WebDriverExtensions.WaitExtension.WaitUntilElement(driver, By.XPath(xPathTranslatedElementLink), 10);
-                        element = driver.FindElement(By.XPath(xPathTranslatedElementLink));
+                        elements = driver.FindElements(By.XPath(xPathTranslatedElementLink));
                     }
                     catch
                     { }
                 }
 
-                return element.Text;
+                // Concatenate all elements 
+                StringBuilder fullTranslatedText = new();
+                foreach (var element in elements)
+                {
+                    fullTranslatedText.Append(element.Text + " ");
+                }
+
+                return fullTranslatedText.ToString().Trim();
             }
             catch 
             {
