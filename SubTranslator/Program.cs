@@ -15,6 +15,7 @@ namespace SubTranslator
     {
         private static TimeSpan totalTime = new();
         private static DateTime lastItemDate;
+        private static Stopwatch timer = new();
 
         static void Main(string[] args)
         {
@@ -51,7 +52,9 @@ namespace SubTranslator
                 // Translate multiple .srt files
                 foreach (string srtFile in srtFileList)
                 {
+                    timer.Restart();
                     TranslateSubtitle(srtFile, originalLanguage, translatedLanguage);
+                    timer.Stop();
                 }
 
                 return;
@@ -67,7 +70,9 @@ namespace SubTranslator
             // Translate a single .srt file
             if (File.Exists(args[0]))
             {
+                timer.Restart();
                 TranslateSubtitle(args[0], originalLanguage, translatedLanguage);
+                timer.Stop();
             }
         }
 
@@ -123,16 +128,20 @@ namespace SubTranslator
                 }
                 count++;
 
-                // Show progress and estimated time
-                Console.WriteLine($"Translated subtitle {count}/{items.Count}. Estimated time to complete: " + GetEstimatedRemainingTime(count, items.Count));
-
-                // For debugging and troubleshooting
-                /*
-                if (count == 3)
+                if (count % 10 == 0)
                 {
-                    break;
-                }*/
+                    // Wait a bit for to avoid being blocked
+                    Console.Write("Waiting 5s....");
+                    System.Threading.Thread.Sleep(5000);
+                    Console.WriteLine("Done.");
+                }
+
+                // Show progress and estimated time
+                TimeSpan timeSpan = timer.Elapsed;
+                string totalProcessingTime = string.Format("{0:D2}:{1:D2}:{2:D2}", timeSpan.Hours, timeSpan.Minutes, timeSpan.Seconds);
+                Console.WriteLine($"{totalProcessingTime} - Translated subtitle {count}/{items.Count}. Estimated time to complete: " + GetEstimatedRemainingTime(count, items.Count));
             }
+
             driver.Close();
             driver.Quit();
 
@@ -159,17 +168,15 @@ namespace SubTranslator
             try
             {
                 // Translate the text with Google Translator
-                driver.Url = $"https://translate.google.com/?hl=pt-BR#view=home&op=translate&sl={originalLanguage}&tl={translatedLanguage}&text={HttpUtility.UrlEncode(text)}";
-
-                // Wait a bit for translation to finish
-                System.Threading.Thread.Sleep(2000);
-
+                driver.Url = $"https://translate.google.com/?hl=pt-BR&op=translate&sl={originalLanguage}&tl={translatedLanguage}&text={HttpUtility.UrlEncode(text)}";
+                
                 // Get translated text
                 IWebElement element = null;
                 try
                 {
                     // Try to get text
                     string xPathTranslatedElementText = "//*[@jsname='W297wb']";
+                    WebDriverExtensions.WaitExtension.WaitUntilElement(driver, By.XPath(xPathTranslatedElementText), 5);
                     element = driver.FindElement(By.XPath(xPathTranslatedElementText));
                 }
                 catch
@@ -177,7 +184,8 @@ namespace SubTranslator
                     try
                     {
                         // Try to get linked text
-                        string xPathTranslatedElementLink = "//*[@jsname='BJE2fc']";
+                        string xPathTranslatedElementLink = "//*[@jsname='jqKxS']";
+                        WebDriverExtensions.WaitExtension.WaitUntilElement(driver, By.XPath(xPathTranslatedElementLink), 5);
                         element = driver.FindElement(By.XPath(xPathTranslatedElementLink));
                     }
                     catch
