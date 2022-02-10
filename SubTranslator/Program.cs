@@ -2,12 +2,12 @@
 using System.IO;
 using System.Web;
 using System.Text;
+using System.Diagnostics;
 using System.Collections.Generic;
 
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using SubtitlesParser.Classes;  // From https://github.com/AlexPoint/SubtitlesParser
-using System.Diagnostics;
 
 namespace SubTranslator
 {
@@ -32,7 +32,7 @@ namespace SubTranslator
                 return;
             }
 
-            // Close any existing ChromeDriver process
+            // Close any existing ChromeDriver processes
             Console.WriteLine("Closing any existing ChromeDriver process");
             Process.Start("taskkill", "/F /IM chromedriver.exe /T");
 
@@ -45,7 +45,7 @@ namespace SubTranslator
                 // If not srt file was found
                 if (srtFileList.Length == 0)
                 {
-                    Console.WriteLine("Please provide a directory with .srt files!");
+                    Console.WriteLine("Please provide a directory with at least one .srt file!");
                     return;
                 }
 
@@ -93,19 +93,22 @@ namespace SubTranslator
             }
 
             // Translate the subtitle with Google Translator and Selenium
-            // (page translation has severe issues in the translation)
+            // (whole page translation has severe issues in the translation)
             ChromeDriverService service = ChromeDriverService.CreateDefaultService();
             service.SuppressInitialDiagnosticInformation = true;  // Disable logs
             service.EnableVerboseLogging = false;                 // Disable logs
             service.EnableAppendLog = false;                      // Disable logs
-            service.HideCommandPromptWindow = true;
+            service.HideCommandPromptWindow = true;               // Hide any ChromeDriver window
             IWebDriver driver = new ChromeDriver(service);
             int count = 0;
             lastItemDate = DateTime.Now;
 
+            // Sometimes first URL is not correctly loaded so just load google.com
+            driver.Url = "http://www.google.com"; 
+
             // Merge the multilines subtitle item into single one
             // when it is not starting with a hiphen
-            // (talk between people should still be multilines)
+            // (movie talk between people should still be multilines)
             foreach (var item in items)
             {
                 if (item.Lines.Count > 1 &&
@@ -123,29 +126,31 @@ namespace SubTranslator
                 for (int f = 0; f < item.Lines.Count; f++)
                 {
                     string translatedText = TranslateText(driver, item.Lines[f], originalLanguage, translatedLanguage);
-                    translatedText = translatedText.Replace(" | ", "\r\n");
+                    translatedText = translatedText.Replace(" | ", "\r\n");  // reconstruct the new lines
                     item.Lines[f] = translatedText;
                 }
                 count++;
 
+                // Every 10 translations wait for 5 seconds
                 if (count % 10 == 0)
                 {
-                    // Wait a bit for to avoid being blocked
+                    // Wait a bit for to avoid being blocked by Google
                     Console.Write("Waiting 5s....");
                     System.Threading.Thread.Sleep(5000);
                     Console.WriteLine("Done.");
                 }
 
-                // Show progress and estimated time
+                // Show progress, total processing time and estimated time to finish
                 TimeSpan timeSpan = timer.Elapsed;
                 string totalProcessingTime = string.Format("{0:D2}:{1:D2}:{2:D2}", timeSpan.Hours, timeSpan.Minutes, timeSpan.Seconds);
                 Console.WriteLine($"{totalProcessingTime} - Translated subtitle {count}/{items.Count}. Estimated time to complete: " + GetEstimatedRemainingTime(count, items.Count));
             }
 
+            // Close and quit ChromeDriver process
             driver.Close();
             driver.Quit();
 
-            // Creates the new subtitle file
+            // Creates the new translated subtitle file
             StreamWriter sw = File.CreateText(translatedFile);
             int index = 1;
             foreach (var item in items)
@@ -174,18 +179,18 @@ namespace SubTranslator
                 IWebElement element = null;
                 try
                 {
-                    // Try to get text
+                    // Try to get the translated text
                     string xPathTranslatedElementText = "//*[@jsname='W297wb']";
-                    WebDriverExtensions.WaitExtension.WaitUntilElement(driver, By.XPath(xPathTranslatedElementText), 5);
+                    WebDriverExtensions.WaitExtension.WaitUntilElement(driver, By.XPath(xPathTranslatedElementText), 10);
                     element = driver.FindElement(By.XPath(xPathTranslatedElementText));
                 }
                 catch
                 {
                     try
                     {
-                        // Try to get linked text
+                        // Try to get translated linked text
                         string xPathTranslatedElementLink = "//*[@jsname='jqKxS']";
-                        WebDriverExtensions.WaitExtension.WaitUntilElement(driver, By.XPath(xPathTranslatedElementLink), 5);
+                        WebDriverExtensions.WaitExtension.WaitUntilElement(driver, By.XPath(xPathTranslatedElementLink), 10);
                         element = driver.FindElement(By.XPath(xPathTranslatedElementLink));
                     }
                     catch
@@ -197,6 +202,7 @@ namespace SubTranslator
             catch 
             {
                 // In case of any exception retry 5 times before setting error
+                // for this specific subtitle
                 retryCount++;
                 if (retryCount == 5)
                 {

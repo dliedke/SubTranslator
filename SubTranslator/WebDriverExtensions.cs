@@ -1,4 +1,7 @@
-﻿using System;
+﻿// This class is used to wait until a web element is available 
+// using a configurable timeout to wait
+
+using System;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 
