@@ -95,6 +95,7 @@ namespace SubTranslator
 
             // Check if we already have a translated file in progress
             // Read, parse it and merge with the original subtitle file
+            int totalItemsAlreadyTranslated = 0;
             if (File.Exists(translatedFile))
             {
                 List<SubtitleItem> itemsAlreadyTranslated;
@@ -103,6 +104,7 @@ namespace SubTranslator
                 items.RemoveRange(0,itemsAlreadyTranslated.Count);
                 items.InsertRange(0,itemsAlreadyTranslated);
                 currentIndexSubtitle = itemsAlreadyTranslated.Count + 1;
+                totalItemsAlreadyTranslated = itemsAlreadyTranslated.Count;
 
                 Console.WriteLine($"NOTE: Found existing translation in progress. Resuming from {currentIndexSubtitle}/{items.Count}...");
             }
@@ -134,7 +136,8 @@ namespace SubTranslator
             }
 
             // Translate all subtitle items not yet translated
-            foreach (var item in items.GetRange(currentIndexSubtitle-1, items.Count - currentIndexSubtitle + 1))
+            var itemsToBeTranslated = items.GetRange(currentIndexSubtitle - 1, items.Count - currentIndexSubtitle + 1);
+            foreach (var item in itemsToBeTranslated)
             {
                 // Translate each subtitle line
                 for (int f = 0; f < item.Lines.Count; f++)
@@ -147,7 +150,7 @@ namespace SubTranslator
                 // Show progress, total processing time and estimated time to finish
                 TimeSpan timeSpan = timer.Elapsed;
                 string totalProcessingTime = string.Format("{0:D2}:{1:D2}:{2:D2}", timeSpan.Hours, timeSpan.Minutes, timeSpan.Seconds);
-                Console.WriteLine($"{totalProcessingTime} - Translated subtitle {currentIndexSubtitle}/{items.Count}. Estimated time to complete: " + GetEstimatedRemainingTime(currentIndexSubtitle, items.Count));
+                Console.WriteLine($"{totalProcessingTime} - Translated subtitle {currentIndexSubtitle}/{itemsToBeTranslated.Count}. Estimated time to complete: " + GetEstimatedRemainingTime(currentIndexSubtitle-totalItemsAlreadyTranslated, itemsToBeTranslated.Count));
 
                 // Creates the new translated subtitle file so we can resume 
                 // later automatically if things go wrong in this long process
@@ -281,7 +284,7 @@ namespace SubTranslator
             lastItemDate = DateTime.Now;
 
             // Not enough data to show estimated time
-            if (currentItem < 10)
+            if (currentItem < 11)
             {
                 return "Please wait...";
             }
