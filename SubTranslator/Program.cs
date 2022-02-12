@@ -230,11 +230,20 @@ namespace SubTranslator
                     { }
                 }
 
-                // Concatenate all elements 
                 StringBuilder fullTranslatedText = new();
-                foreach (var element in elements)
+
+                // If we have a translation with both genders get only one
+                if (driver.PageSource.Contains("Translations are gender-specific"))
                 {
-                    fullTranslatedText.Append(element.Text + " ");
+                    fullTranslatedText.Append(elements[elements.Count > 1 ? 1 : 0].Text);
+                }
+                else
+                {
+                    // Concatenate all elements 
+                    foreach (var element in elements)
+                    {
+                        fullTranslatedText.Append(element.Text + " ");
+                    }
                 }
 
                 return fullTranslatedText.ToString().Trim();
