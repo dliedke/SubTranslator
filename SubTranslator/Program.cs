@@ -35,8 +35,9 @@ namespace SubTranslator
             }
 
             // Close any existing ChromeDriver processes
-            Console.WriteLine("Closing any existing ChromeDriver process");
-            Process.Start("taskkill", "/F /IM chromedriver.exe /T");
+            //DEBUG
+            //Console.WriteLine("Closing any existing ChromeDriver process");
+            //Process.Start("taskkill", "/F /IM chromedriver.exe /T");
 
             // Check if provided args is a directory
             if (Directory.Exists(args[0]))
@@ -151,7 +152,8 @@ namespace SubTranslator
                 // Show progress, total processing time and estimated time to finish
                 TimeSpan timeSpan = timer.Elapsed;
                 string totalProcessingTime = string.Format("{0:D2}:{1:D2}:{2:D2}", timeSpan.Hours, timeSpan.Minutes, timeSpan.Seconds);
-                Console.WriteLine($"{totalProcessingTime} - Translated subtitle {currentIndexSubtitle}/{itemsToBeTranslated.Count}. Estimated time to complete: " + GetEstimatedRemainingTime(currentIndexSubtitle-totalItemsAlreadyTranslated, itemsToBeTranslated.Count));
+                decimal percent = Math.Round(((decimal) currentIndexSubtitle / itemsToBeTranslated.Count * 100), 2);
+                Console.WriteLine($"{totalProcessingTime} - Translated subtitle {currentIndexSubtitle}/{itemsToBeTranslated.Count} ({percent} %). Estimated time to complete: " + GetEstimatedRemainingTime(currentIndexSubtitle-totalItemsAlreadyTranslated, itemsToBeTranslated.Count));
 
                 // Creates the new translated subtitle file so we can resume 
                 // later automatically if things go wrong in this long process
