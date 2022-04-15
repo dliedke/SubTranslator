@@ -35,9 +35,8 @@ namespace SubTranslator
             }
 
             // Close any existing ChromeDriver processes
-            //DEBUG
-            //Console.WriteLine("Closing any existing ChromeDriver process");
-            //Process.Start("taskkill", "/F /IM chromedriver.exe /T");
+            Console.WriteLine("Closing any existing ChromeDriver process");
+            Process.Start("taskkill", "/F /IM chromedriver.exe /T");
 
             // Check if provided args is a directory
             if (Directory.Exists(args[0]))
@@ -55,6 +54,7 @@ namespace SubTranslator
                 // Translate multiple .srt files
                 foreach (string srtFile in srtFileList)
                 {
+                    currentIndexSubtitle = 1;
                     timer.Restart();
                     TranslateSubtitle(srtFile, originalLanguage, translatedLanguage);
                     timer.Stop();
