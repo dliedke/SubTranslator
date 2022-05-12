@@ -9,6 +9,8 @@ using System.Collections.ObjectModel;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using SubtitlesParser.Classes;  // From https://github.com/AlexPoint/SubtitlesParser
+using WebDriverManager;
+using WebDriverManager.DriverConfigs.Impl;
 
 namespace SubTranslator
 {
@@ -110,6 +112,10 @@ namespace SubTranslator
 
                 Console.WriteLine($"NOTE: Found existing translation in progress. Resuming from {currentIndexSubtitle}/{items.Count}...");
             }
+
+            // Download latest Chromedriver automatically
+            // Open source project from https://github.com/rosolko/WebDriverManager.Net
+            new DriverManager().SetUpDriver(new ChromeConfig());
 
             // Translate the subtitle with Google Translator and Selenium
             // (whole page translation has severe issues in the translation)
