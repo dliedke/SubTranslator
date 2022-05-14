@@ -11,6 +11,7 @@ using OpenQA.Selenium.Chrome;
 using SubtitlesParser.Classes;  // From https://github.com/AlexPoint/SubtitlesParser
 using WebDriverManager;
 using WebDriverManager.DriverConfigs.Impl;
+using System.Threading;
 
 namespace SubTranslator
 {
@@ -127,8 +128,12 @@ namespace SubTranslator
             IWebDriver driver = new ChromeDriver(service);
             lastItemDate = DateTime.Now;
 
-            // Sometimes first URL is not correctly loaded so just load google.com
-            driver.Url = "http://www.google.com";
+            // Sometimes first URL is not correctly loaded so just load google translate 3 times
+            for (int f = 1; f <= 3; f++)
+            {
+                driver.Url = "https://translate.google.com.br/?hl=pt-BR&sl=en&tl=pt&text=house&op=translate";
+                Thread.Sleep(2000);
+            }
 
             // Merge the multilines subtitle item into single one
             // when it is not starting with a hiphen
