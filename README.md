@@ -6,11 +6,11 @@ Better than some sites that translate the page because the translation quality i
 
 This takes more time but the translation quality is much better.
 
-Set original subtitle language code in variable 'originalLanguage' in Main() method.
+Usage: SubTranslator [originalLanguageCode] [translatedLanguageCode] [srt file or directory with srt files]
 
-Set final translated language code in variable 'translatedLanguage' in Main() method. 
+Example: SubTranslator en pt c:\temp\subtitle.srt
 
-Then send the srt filename as parameter in command line when calling the compiled application.
+Language codes can be retrieve from Google Translator URL example: https://translate.google.com.br/?hl=en-US&sl=en&tl=pt&text=house%0A&op=translate
 
 It is also possible to send a subdirectory as parameters to translate multiple .srt files in sequence.
 
