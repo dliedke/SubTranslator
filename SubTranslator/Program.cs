@@ -2,16 +2,17 @@
 using System.IO;
 using System.Web;
 using System.Text;
+using System.Threading;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
+using WebDriverManager;                      // From https://github.com/rosolko/WebDriverManager.Net
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
-using SubtitlesParser.Classes;  // From https://github.com/AlexPoint/SubtitlesParser
-using WebDriverManager;
+using SubtitlesParser.Classes;               // From https://github.com/AlexPoint/SubtitlesParser
 using WebDriverManager.DriverConfigs.Impl;
-using System.Threading;
+
 
 namespace SubTranslator
 {
@@ -24,28 +25,31 @@ namespace SubTranslator
 
         static void Main(string[] args)
         {
-            // Original subtitle language
-            string originalLanguage = "en";
-
-            // Final language for subtitle translation
-            string translatedLanguage = "pt";
-
             // Check if subtitle file/directory was provided
-            if (args.Length < 1)
+            if (args.Length < 3)
             {
-                Console.WriteLine("Please provide the english subtitle file or a directory with .srt files!");
+                Console.WriteLine("Usage: SubTranslator [originalLanguageCode] [translatedLanguageCode] [srt file or directory with srt files]\r\n\r\nExample: SubTranslator en pt c:\\temp\\subtitle.srt");
                 return;
             }
+
+            // Original subtitle language
+            string originalLanguage = args[0];
+
+            // Final language for subtitle translation
+            string translatedLanguage = args[1];
+
+            // File or directory for subtitle(s)
+            string fileDir = args[2];
 
             // Close any existing ChromeDriver processes
             Console.WriteLine("Closing any existing ChromeDriver process");
             Process.Start("taskkill", "/F /IM chromedriver.exe /T");
 
             // Check if provided args is a directory
-            if (Directory.Exists(args[0]))
+            if (Directory.Exists(fileDir))
             {
                 // Find all srt files in the directory
-                string[] srtFileList = Directory.GetFiles(args[0], "*.srt");
+                string[] srtFileList = Directory.GetFiles(fileDir, "*.srt");
 
                 // If not srt file was found
                 if (srtFileList.Length == 0)
@@ -67,17 +71,17 @@ namespace SubTranslator
             }
 
             // Check if subtitle file exists
-            if (args.Length > 0 && string.IsNullOrEmpty(args[0]) == false && File.Exists(args[0]) == false)
+            if (string.IsNullOrEmpty(fileDir) == false && File.Exists(fileDir) == false)
             {
                 Console.WriteLine("Please provide an english subtitle file that exists!");
                 return;
             }
 
             // Translate a single .srt file
-            if (File.Exists(args[0]))
+            if (File.Exists(fileDir))
             {
                 timer.Restart();
-                TranslateSubtitle(args[0], originalLanguage, translatedLanguage);
+                TranslateSubtitle(fileDir, originalLanguage, translatedLanguage);
                 timer.Stop();
             }
         }
