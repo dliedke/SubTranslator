@@ -12,6 +12,7 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using SubtitlesParser.Classes;               // From https://github.com/AlexPoint/SubtitlesParser
 using WebDriverManager.DriverConfigs.Impl;
+using static System.Net.Mime.MediaTypeNames;
 
 
 namespace SubTranslator
@@ -86,6 +87,35 @@ namespace SubTranslator
             }
         }
 
+        private static void InitialGoogleTranslatorLoad(IWebDriver driver, string originalLanguage, string translatedLanguage)
+        {
+            int retryCount = 0;
+
+        retryLoad:
+
+            try
+            {
+                // Failed to load google translator
+                if (retryCount == 3)
+                {
+                    throw new ApplicationException("Error opening google translator!");
+                }
+
+                // Attempt to load Google translator
+                driver.Url = $"https://translate.google.com/?hl=en-US&op=translate&sl={originalLanguage}&tl={translatedLanguage}&text={HttpUtility.UrlEncode("house")}";
+                driver.Manage().Window.Maximize();
+
+                // Check if translated element is present on the page
+                string xPathTranslatedElementText = "//*[@jsname='W297wb']";
+                WebDriverExtensions.WaitExtension.WaitUntilElement(driver, By.XPath(xPathTranslatedElementText), 6);
+            }
+            catch
+            {
+                retryCount++;
+                goto retryLoad;
+            }
+        }
+
         private static void TranslateSubtitle(string file, string originalLanguage, string translatedLanguage)
         {
             // Show file name being translated
@@ -132,12 +162,9 @@ namespace SubTranslator
             IWebDriver driver = new ChromeDriver(service);
             lastItemDate = DateTime.Now;
 
-            // Sometimes first URL is not correctly loaded so just load google translate 3 times
-            for (int f = 1; f <= 3; f++)
-            {
-                driver.Url = "https://translate.google.com.br/?hl=pt-BR&sl=en&tl=pt&text=house&op=translate";
-                Thread.Sleep(2000);
-            }
+
+            InitialGoogleTranslatorLoad(driver, originalLanguage, translatedLanguage);
+
 
             // Merge the multilines subtitle item into single one
             // when it is not starting with a hiphen
@@ -194,6 +221,7 @@ namespace SubTranslator
             // Show file name that was sucessfully translated
             Console.WriteLine($"DONE - Translated subtitle file: \"{Path.GetFileName(file)}\"\r\n");
         }
+
 
         private static void CreateNewSubtileFile(string translatedFile, List<SubtitleItem> items)
         {
