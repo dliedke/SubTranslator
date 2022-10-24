@@ -2,7 +2,6 @@
 using System.IO;
 using System.Web;
 using System.Text;
-using System.Threading;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -12,7 +11,6 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using SubtitlesParser.Classes;               // From https://github.com/AlexPoint/SubtitlesParser
 using WebDriverManager.DriverConfigs.Impl;
-using static System.Net.Mime.MediaTypeNames;
 
 
 namespace SubTranslator
