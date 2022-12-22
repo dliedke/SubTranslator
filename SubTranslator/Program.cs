@@ -130,6 +130,9 @@ namespace SubTranslator
                 items = parser.ParseStream(fileStream, Encoding.UTF8);
             }
 
+            // Save the total items from the original subtitle
+            int totalItems = items.Count;
+
             // Check if we already have a translated file in progress
             // Read, parse it and merge with the original subtitle file
             int totalItemsAlreadyTranslated = 0;
@@ -177,6 +180,7 @@ namespace SubTranslator
                 }
             }
 
+            
             // Translate all subtitle items not yet translated
             var itemsToBeTranslated = items.GetRange(currentIndexSubtitle - 1, items.Count - currentIndexSubtitle + 1);
             foreach (var item in itemsToBeTranslated)
@@ -192,8 +196,8 @@ namespace SubTranslator
                 // Show progress, total processing time and estimated time to finish
                 TimeSpan timeSpan = timer.Elapsed;
                 string totalProcessingTime = string.Format("{0:D2}:{1:D2}:{2:D2}", timeSpan.Hours, timeSpan.Minutes, timeSpan.Seconds);
-                decimal percent = Math.Round(((decimal) currentIndexSubtitle / itemsToBeTranslated.Count * 100), 2);
-                Console.WriteLine($"{totalProcessingTime} - Translated subtitle {currentIndexSubtitle}/{itemsToBeTranslated.Count} ({percent} %). Estimated time to complete: " + GetEstimatedRemainingTime(currentIndexSubtitle-totalItemsAlreadyTranslated, itemsToBeTranslated.Count));
+                decimal percent = Math.Round(((decimal) currentIndexSubtitle / totalItems * 100), 2);
+                Console.WriteLine($"{totalProcessingTime} - Translated subtitle {currentIndexSubtitle}/{totalItems} ({percent} %). Estimated time to complete: " + GetEstimatedRemainingTime(currentIndexSubtitle-totalItemsAlreadyTranslated, itemsToBeTranslated.Count));
 
                 // Creates the new translated subtitle file so we can resume 
                 // later automatically if things go wrong in this long process
